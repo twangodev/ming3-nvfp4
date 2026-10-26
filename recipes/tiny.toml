@@ -1,0 +1,17 @@
+# Selected corrected hybrid calibration; retained layers remain BF16.
+variant = "tiny"
+model_id = "inclusionAI/Ming-3.0-audio-tiny"
+revision = "3c9578f641b6745abf2d1239dc8419726f37c0e2"
+mode = "w4a4"
+algorithm = "mse"
+seed = 42
+max_tokens = 2048
+calibration_batch_size = 8
+calibration_batch_tokens = 4096
+calibration_checkpoint_every = 8
+min_expert_tokens = 128
+gpu_memory_gib = 80
+cpu_memory_gib = 80
+scratch_memory_gib = 16
+disk_floor_gib = 100
+retain_layers = [5, 10, 15, 18, 20, 21, 22]
