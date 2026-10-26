@@ -11,7 +11,16 @@ build/
 serving/.venv/
 .idea/
 releases/
-serving/
+serving/*
+!serving/.python-version
+!serving/README.md
+!serving/LICENSE-APACHE-2.0
+!serving/pyproject.toml
+!serving/uv.lock
+!serving/measured-runtime.txt
+!serving/pytest.ini
+!serving/src/
+!serving/tests/
 evals/
 runs/
 outputs/
