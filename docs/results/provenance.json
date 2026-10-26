@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "scope": "Aggregate-only historical quality evidence; no new inference.",
+  "models": {
+    "tiny": {
+      "model": {
+        "repo_id": "inclusionAI/Ming-3.0-audio-tiny",
+        "revision": "3c9578f641b6745abf2d1239dc8419726f37c0e2"
+      },
+      "quality_table": "tiny-paired-quality.csv",
+      "sha256": "ceeceb351fbc9e8e284b1b52f3acc7f8a37153217a38cf77fbae724060d66d9e",
+      "source_report_sha256": "26e92395dcb46b32f4039375a9e3898a685264fde7ee724e6242c06bd4d4ed6d",
+      "public_methods": "https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4/blob/main/evals/methods.md",
+      "public_quality_table": "https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4/blob/main/evals/results/quality.csv"
+    },
+    "flash": {
+      "model": {
+        "repo_id": "inclusionAI/Ming-3.0-audio-flash",
+        "revision": "77e851a4675a93181c30f50426507d076cc55a1b"
+      },
+      "quality_table": "flash-native-quality.csv",
+      "sha256": "b29e5bdf8975f84c329b12be44e02412353fbef5af88bd5242dc39f5d141eb50",
+      "source_report_sha256": "eb7de5a64db7c3aa045cc4390ff00a5fea03f7d47f7f7c2b80168c357b2d167e",
+      "public_methods": "https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4/blob/main/evals/methods.md",
+      "public_quality_table": "https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4/blob/main/evals/results/quality.csv"
+    }
+  },
+  "validation_boundary": "Quality CSV files copied byte-for-byte from locally staged model-local public evaluation bundles; hashes checked against their provenance records. No fresh GPU reproduction, inference, or bulk weight/audio hashing.",
+  "historical_calibration_host": {
+    "os": "Debian GNU/Linux 13.7",
+    "cpu": "AMD Ryzen Threadripper 9960X, 24 cores",
+    "ram_bytes": 134389587968,
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+    "gpu_memory_mib": 97887,
+    "compute_capability": "12.0",
+    "driver": "615.71.10",
+    "receipt_sha256": "64c9c0280f89f16d323e4ad28ab77a736c390670c04c31f8a6e578c18d73b7ec",
+    "scope": "Historical host receipt, not a fresh clean-machine or minimum-resource validation."
+  }
+}

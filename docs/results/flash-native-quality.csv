@@ -1,0 +1,9 @@
+model,benchmark,metric,samples,higher_is_better,score_percent,capped,invalid,evidence_id
+flash,fleurs_en,wer,519,False,2.898550724637681,0,0,flash_native
+flash,fleurs_zh,cer,817,False,7.887499181455046,0,0,flash_native
+flash,librispeech_clean,wer,2492,False,1.2374568674889939,0,0,flash_native
+flash,librispeech_other,wer,2811,False,2.470432077976108,0,0,flash_native
+flash,mmar,accuracy,872,True,35.321100917431195,28,0,flash_native
+flash,mmau,accuracy,872,True,34.74770642201835,54,0,flash_native
+flash,mmlu_pro,accuracy,11904,True,70.75772849462365,750,30,flash_native
+flash,mmsu,accuracy,4872,True,42.44663382594417,148,2317,flash_native
