@@ -1,0 +1,25 @@
+model,benchmark,count,score_percent,method,unchanged_scorer_percent,generation_caps
+tiny-bf16,fleurs_en,647,3.2905131551830733,Official Whisper English normalization; corpus WER,3.2905131551830733,0
+tiny-nvfp4,fleurs_en,647,3.4416431957134024,Official Whisper English normalization; corpus WER,3.4416431957134024,0
+flash-nvfp4,fleurs_en,647,2.919557601154084,Official Whisper English normalization; corpus WER,2.919557601154084,0
+tiny-bf16,fleurs_zh,945,3.5242290748898677,UltraEval text normalization; character units,8.541614070520913,0
+tiny-nvfp4,fleurs_zh,945,3.4343844191977744,UltraEval text normalization; character units,8.4490448539931,0
+flash-nvfp4,fleurs_zh,945,3.4546719220959887,UltraEval text normalization; character units,8.10401413784398,0
+tiny-bf16,librispeech_clean,2620,1.4238029682991684,Official Whisper English normalization; corpus WER,1.4238029682991684,0
+tiny-nvfp4,librispeech_clean,2620,1.4426612857600845,Official Whisper English normalization; corpus WER,1.4426612857600845,0
+flash-nvfp4,librispeech_clean,2620,1.2031606540064494,Official Whisper English normalization; corpus WER,1.2031606540064494,0
+tiny-bf16,librispeech_other,2939,3.0426231988200145,Official Whisper English normalization; corpus WER,3.0426231988200145,0
+tiny-nvfp4,librispeech_other,2939,3.0709882379637685,Official Whisper English normalization; corpus WER,3.0709882379637685,0
+flash-nvfp4,librispeech_other,2939,2.4507393820203474,Official Whisper English normalization; corpus WER,2.4507393820203474,0
+tiny-bf16,mmau,1000,76.7,Gold-independent answer parsing; capped/unparsed wrong; full denominator,7.3,19
+tiny-nvfp4,mmau,1000,77.3,Gold-independent answer parsing; capped/unparsed wrong; full denominator,8.7,16
+flash-nvfp4,mmau,1000,78.2,Gold-independent answer parsing; capped/unparsed wrong; full denominator,17.4,50
+tiny-bf16,mmar,1000,63.9,Gold-independent answer parsing; capped/unparsed wrong; full denominator,9.0,22
+tiny-nvfp4,mmar,1000,65.2,Gold-independent answer parsing; capped/unparsed wrong; full denominator,10.5,17
+flash-nvfp4,mmar,1000,69.5,Gold-independent answer parsing; capped/unparsed wrong; full denominator,18.4,34
+tiny-bf16,mmsu,5000,68.04,Gold-independent answer parsing; capped/unparsed wrong; full denominator,61.08220603537981,97
+tiny-nvfp4,mmsu,5000,67.14,Gold-independent answer parsing; capped/unparsed wrong; full denominator,60.11029411764706,74
+flash-nvfp4,mmsu,5000,77.8,Gold-independent answer parsing; capped/unparsed wrong; full denominator,80.87121212121212,131
+tiny-bf16,mmlu_pro,12032,61.427859042553195,Official answer extraction; unparsed wrong; no random guessing,61.50265957446808,1217
+tiny-nvfp4,mmlu_pro,12032,60.164561170212764,Official answer extraction; unparsed wrong; no random guessing,60.255984042553195,1077
+flash-nvfp4,mmlu_pro,12032,75.24102393617021,Official answer extraction; unparsed wrong; no random guessing,75.24102393617021,328

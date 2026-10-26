@@ -151,7 +151,29 @@ Treat an interrupted export as incomplete; use a new empty destination before
 retrying. Keep the generated manifest/provenance, coverage, calibration state,
 and audit outputs locally to trace a newly produced checkpoint.
 
-## Validation of this repository
+## Evaluate an exported checkpoint
+
+Quantization, serving, and benchmark scoring have separate environments. After
+export and the retained-tensor audit, install the [serving runtime](../serving/README.md)
+and follow the [full-suite evaluation guide](../evaluation/README.md). Set
+`evaluation/models.local.json` to your exported checkpoint paths and the pinned
+original Tiny source. That machine-specific configuration remains outside Git.
+
+Initialize the benchmark submodules with `git submodule update --init --recursive`.
+The evaluator prepares pinned full dataset splits, runs original Tiny BF16 and
+both NVFP4 checkpoints, and preserves responses for separate scoring. Its data
+preparation downloads are distinct from the training-only calibration selection
+above. Do not use benchmark answers to recalibrate a candidate and then call the
+same benchmark an untouched holdout.
+
+The [completed full-suite report](results/full-suite-parity.md) records the
+published local scores and their interpretation. The
+[diagnostic workflow](../evaluation/diagnostics/README.md) regenerates its
+normalization and answer-parsing tables from a completed run. The repository
+contains aggregate results; per-example predictions, benchmark audio, exported
+weights, calibration state, and release-upload workspaces remain local.
+
+## Validation of the quantization extraction
 
 The curated implementation passed 102 CPU tests, Ruff, and locked dependency
 resolution. All 2,053 selected calibration examples were reconstructed offline
@@ -162,4 +184,5 @@ projections. The eight Flash preflight inputs also passed CPU preprocessing.
 The extracted Flash preflight has not been rerun end-to-end on a GPU. Historical
 GPU evidence supports the underlying checks; CPU tests of this extraction do not
 replace a fresh calibration/export run. No full recalibration or benchmark was
-performed while preparing these commits.
+performed while preparing the original quantization commits. The later full
+evaluation ran existing checkpoints; it did not rerun calibration or export.

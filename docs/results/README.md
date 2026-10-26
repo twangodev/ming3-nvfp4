@@ -1,5 +1,9 @@
 # Aggregate quality evidence
 
+[Full-suite results and parity investigation](full-suite-parity.md) contains the
+new complete eight-benchmark runs and their separate scoring/runtime diagnostics.
+The tables below remain the historical post-selection results.
+
 These compact historical tables contain the final selected checkpoints' primary
 quality results, with 25,159 examples per model across eight tasks. They were
 copied byte-for-byte from the staged model-local evaluation bundles and checked

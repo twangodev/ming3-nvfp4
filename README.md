@@ -20,10 +20,19 @@ See [reproduction](docs/reproduction.md) for setup, data preparation, explicit l
 paths, calibration/export commands, and resource assumptions. Source weights are
 never downloaded automatically or overwritten.
 
-[Aggregate quality evidence](docs/results/README.md) contains eight tasks per
-model. Tiny has paired BF16/NVFP4 post-selection results; Flash reports absolute
-native NVFP4 quality without a matched BF16 comparison. These adapted local evaluations do not establish an untouched
-holdout, published benchmark reproduction, or family-wide quality.
+[Full-suite results and parity investigation](docs/results/full-suite-parity.md)
+reports all 78,549 predictions across eight benchmarks, with separate Chinese
+normalization, answer-format, and runtime diagnostics in expandable notes. Tiny
+has a local BF16/NVFP4 comparison; Flash has no local BF16 baseline. These local
+evaluations overlap prior development and do not establish an untouched holdout
+or a reproduction of Ming's published protocol. [Historical subset results](docs/results/README.md)
+remain available separately.
+
+To validate an exported checkpoint, install the separate
+[serving runtime](serving/README.md), then follow the
+[evaluation setup](evaluation/README.md). It uses pinned upstream submodules,
+shared model prompts, and resumable prediction journals. The serving setup
+records the measured dependency overrides as well as its lockfile.
 
 Model cards and downloadable checkpoints:
 [Tiny NVFP4](https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4),
