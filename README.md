@@ -1,43 +1,51 @@
-# Ming 3.0 NVFP4
+<div align="center">
+  <img src="https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny/resolve/main/assets/ming-3.0-audio-logo.png" width="110" alt="Ming logo">
+  <h1>Ming 3.0 Audio NVFP4</h1>
+  <p>Audio understanding and reasoning, quantized for NVIDIA Blackwell.</p>
+  <p>
+    <a href="https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4"><img src="https://img.shields.io/badge/Tiny-NVFP4-FFD21E?style=flat-square&amp;logo=huggingface" alt="Tiny NVFP4 on Hugging Face"></a>
+    <a href="https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4"><img src="https://img.shields.io/badge/Flash-NVFP4-FFD21E?style=flat-square&amp;logo=huggingface" alt="Flash NVFP4 on Hugging Face"></a>
+  </p>
+  <p><a href="docs/reproduction.md">Reproduce</a> · <a href="serving/README.md">Serve</a> · <a href="evaluation/README.md">Evaluate</a> · <a href="docs/results/full-suite-parity.md">Results</a></p>
+</div>
 
-Reproducible quantization of Ming 3.0 Audio Tiny and Flash with NVIDIA Model
-Optimizer. This repository prepares calibration data, measures expert coverage,
-calibrates routed experts, exports packed checkpoints, and audits retained tensors.
-Weights, datasets, calibration state, and exported checkpoints stay outside Git.
-
-The final recipes use **W4A4 NVFP4 with MSE calibration**. They quantize routed
-expert `gate_proj`, `up_proj`, and `down_proj` only. Attention, shared experts,
-routers, embeddings, output heads, audio components, Talker/VAE, and MTP retain
-source precision. FP32 `A_log`, `dt_bias`, and `expert_bias` are preserved.
-No recipe quantizes KV or recurrent caches.
-
-| Recipe | Routed experts | Source revision |
-| --- | --- | --- |
-| [Tiny](recipes/tiny.toml) | 16 layers NVFP4; layers 5, 10, 15, 18, 20, 21, 22 BF16 | `3c9578f641b6745abf2d1239dc8419726f37c0e2` |
-| [Flash pooled inputs](recipes/flash.toml) | All 40 routed layers NVFP4; Model Optimizer pooled input-scale policy | `77e851a4675a93181c30f50426507d076cc55a1b` |
-
-See [reproduction](docs/reproduction.md) for setup, data preparation, explicit local
-paths, calibration/export commands, and resource assumptions. Source weights are
-never downloaded automatically or overwritten.
-
-[Full-suite results and parity investigation](docs/results/full-suite-parity.md)
-reports all 78,549 predictions across eight benchmarks, with separate Chinese
-normalization, answer-format, and runtime diagnostics in expandable notes. Tiny
-has a local BF16/NVFP4 comparison; Flash has no local BF16 baseline. These local
-evaluations overlap prior development and do not establish an untouched holdout
-or a reproduction of Ming's published protocol. [Historical subset results](docs/results/README.md)
-remain available separately.
-
-To validate an exported checkpoint, install the separate
-[serving runtime](serving/README.md), then follow the
-[evaluation setup](evaluation/README.md). It uses pinned upstream submodules,
-shared model prompts, and resumable prediction journals. The serving setup
-records the measured dependency overrides as well as its lockfile.
-
-Model cards and downloadable checkpoints:
-[Tiny NVFP4](https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4),
-[Flash NVFP4](https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4).
-Upstream sources:
-[Ming Tiny](https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny),
-[Ming Flash](https://huggingface.co/inclusionAI/Ming-3.0-audio-flash),
+Community quantizations of inclusionAI's Ming 3.0 Audio Tiny and Flash using
+**4-bit weights and activations (W4A4)** with
 [NVIDIA Model Optimizer](https://github.com/NVIDIA/Model-Optimizer).
+This repository contains the calibration, export, audit, and evaluation workflows.
+
+## Models
+
+| Checkpoint | Routed-expert precision | Recipe |
+| --- | --- | --- |
+| [Tiny NVFP4](https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4) | 16 layers NVFP4, 7 layers BF16 | [Tiny](recipes/tiny.toml) |
+| [Flash NVFP4](https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4) | All 40 layers NVFP4 | [Flash](recipes/flash.toml) |
+
+<details>
+<summary>Quantization details</summary>
+
+Both recipes use MSE calibration and quantize routed-expert projections only.
+Attention, shared experts, routers, and audio components retain source precision;
+KV and recurrent caches are unchanged. Tiny retains selected layers in BF16;
+Flash uses Model Optimizer's pooled input-scale policy. Exact source revisions
+and settings are pinned in the recipes.
+
+</details>
+
+## Reproduce
+
+Follow the [reproduction guide](docs/reproduction.md) to prepare calibration data,
+quantize, export, and audit a checkpoint. The [serving setup](serving/README.md)
+and [evaluation guide](evaluation/README.md) cover validation with pinned dependencies
+and upstream benchmarks. Weights, datasets, and run artifacts stay outside Git.
+
+## Results
+
+[Full results and parity investigation](docs/results/full-suite-parity.md) cover
+**eight benchmarks and 26,183 examples per model**. Tiny includes a local BF16
+comparison; Flash has no local BF16 baseline. Normalization, scoring, and comparison
+limits are documented in expandable notes. These local measurements are not exact
+reproductions of Ming's published evaluation.
+
+Base models by inclusionAI: [Tiny](https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny)
+and [Flash](https://huggingface.co/inclusionAI/Ming-3.0-audio-flash).
