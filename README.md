@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny/resolve/main/assets/ming-3.0-audio-logo.png" width="110" alt="Ming logo">
+  <img src="https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4/resolve/main/assets/ming-3.0-audio-logo.png" width="110" alt="Ming logo">
   <h1>Ming 3.0 Audio NVFP4</h1>
   <p>Audio understanding and reasoning, quantized for NVIDIA Blackwell.</p>
   <p>
