@@ -1,0 +1,6 @@
+editdistance==0.8.1
+more-itertools==11.2.1
+portalocker==2.0.0
+regex==2026.9.29
+sacrebleu==1.5.1
+zhconv==1.4.3

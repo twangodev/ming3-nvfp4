@@ -1,0 +1,29 @@
+{
+  "inspected_date": "2026-10-26",
+  "source_images": [
+    "https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny/blob/main/assets/benchmark-asr.png",
+    "https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny/blob/main/assets/benchmark-audio-intelligence.png",
+    "https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny/blob/main/assets/benchmark-text.png"
+  ],
+  "tiny": {
+    "fleurs_en": 3.30,
+    "fleurs_zh": 2.99,
+    "librispeech_clean": 1.42,
+    "librispeech_other": 3.06,
+    "mmau": 75.90,
+    "mmar": 67.70,
+    "mmsu": 73.06,
+    "mmlu_pro": null
+  },
+  "flash": {
+    "fleurs_en": 2.86,
+    "fleurs_zh": 2.92,
+    "librispeech_clean": 1.20,
+    "librispeech_other": 2.40,
+    "mmau": 82.00,
+    "mmar": 74.40,
+    "mmsu": 78.82,
+    "mmlu_pro": 80.00
+  },
+  "scope": "Publisher-reported values transcribed from inspected benchmark images; original evaluation recipe not established."
+}
