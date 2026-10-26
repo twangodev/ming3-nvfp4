@@ -50,6 +50,12 @@ def main():
         command.add_argument("--smoke", action="store_true", help="Non-release integration only")
         if name == "calibrate":
             command.add_argument("--coverage-from", type=Path)
+            command.add_argument("--validation", type=Path, help="Completed Flash validation bundle")
+    validate = sub.add_parser("validate-flash", help="Run bounded Tiny controls for Flash calibration")
+    validate.add_argument("--manifest", type=Path, required=True)
+    validate.add_argument("--validation-source", type=Path, required=True,
+                          help="Pinned Tiny snapshot used for resident/offloaded controls")
+    validate.add_argument("--output", type=Path, required=True)
     export = sub.add_parser("export", help="Export saved calibration in a fresh process")
     export.add_argument("--calibration", type=Path, required=True)
     export.add_argument("--output", type=Path, required=True)
@@ -70,6 +76,18 @@ def main():
         from .common import read_recipe, snapshot, write_json
         recipe = read_recipe(args.recipe)
         source = snapshot(recipe, args.source)
+        policy = recipe.get("expert_coverage_policy")
+        if policy not in (None, "modelopt_pooled_inputs_v1"):
+            parser.error(f"Unsupported expert coverage policy: {policy}")
+        if args.command == "calibrate":
+            if policy and (not args.layerwise or args.smoke or not args.coverage_from
+                           or not args.validation):
+                parser.error("Flash calibration requires --layerwise, --coverage-from and "
+                             "--validation; --smoke is not supported")
+            if not policy and args.validation:
+                parser.error("--validation applies only to pooled Flash calibration")
+        if args.command == "validate-flash" and not policy:
+            parser.error("validate-flash requires the pooled Flash recipe")
         if args.command == "inspect":
             from .inventory import inspect_model
             result = inspect_model(source, recipe["retain_layers"])
@@ -84,13 +102,30 @@ def main():
             from . import pipeline
             with gpu_job():
                 if args.command == "coverage":
-                    result = pipeline.coverage(recipe, source, args.manifest, args.output,
+                    # Routing is measured before the post-routing scale policy;
+                    # reuse_pooled_coverage checks this exact policy-free identity.
+                    coverage_recipe = {k: v for k, v in recipe.items()
+                                       if k != "expert_coverage_policy"}
+                    result = pipeline.coverage(coverage_recipe, source, args.manifest, args.output,
                                                args.layerwise, args.smoke)
+                elif args.command == "validate-flash":
+                    from .flash_validation import validate_flash
+                    result = validate_flash(recipe, args.validation_source, args.manifest,
+                                            args.output)
                 elif args.command == "calibrate":
-                    result = pipeline.calibrate(recipe, source, args.manifest, args.output,
-                                                args.layerwise, args.smoke, args.coverage_from)
+                    if policy:
+                        from .pooled_calibration import calibrate_pooled
+                        result = calibrate_pooled(recipe, source, args.manifest, args.output,
+                                                  args.coverage_from, validation=args.validation)
+                    else:
+                        result = pipeline.calibrate(recipe, source, args.manifest, args.output,
+                                                    args.layerwise, args.smoke, args.coverage_from)
                 else:
-                    result = pipeline.export(recipe, source, args.calibration, args.output)
+                    if policy:
+                        from .pooled_calibration import export_pooled
+                        result = export_pooled(recipe, source, args.calibration, args.output)
+                    else:
+                        result = pipeline.export(recipe, source, args.calibration, args.output)
     print(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
     if args.command == "inspect" and not result["complete"]:
         raise SystemExit(2)

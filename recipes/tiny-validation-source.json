@@ -1,0 +1,66 @@
+{
+  "files": {
+    "chat_template.jinja": {
+      "git_blob_sha1": "f56690061016c35a8dfe05d6bc930f93906246ff",
+      "size_bytes": 7543
+    },
+    "config.json": {
+      "git_blob_sha1": "7a27fe458a11baa8afa594d2faad15e8a4d5631a",
+      "size_bytes": 3008
+    },
+    "configuration_bailing_moe_v3.py": {
+      "git_blob_sha1": "7231c7cca1d66d8706e3d50fd094b0be04b853d0",
+      "size_bytes": 4951
+    },
+    "configuration_bailing_moe_v3_audio.py": {
+      "git_blob_sha1": "1adf28fa38ca9e15440bbe3839955a23ed04777a",
+      "size_bytes": 8421
+    },
+    "generation_config.json": {
+      "git_blob_sha1": "021cb1bd2545a47f95dc7c440f2eb741bdbcc4c6",
+      "size_bytes": 77
+    },
+    "model-00001-of-00002.safetensors": {
+      "sha256": "53b7663c7c52aa36e487977d6e9bb2f5666b7aaa543bd5d5dd4e96ec88cfd957",
+      "size_bytes": 9551820960
+    },
+    "model-00002-of-00002.safetensors": {
+      "sha256": "08d9e7bd9d885a0d6608953c6bbe40dbfb67f673a0cce9382414b55a9380053a",
+      "size_bytes": 8192122649
+    },
+    "model.safetensors.index.json": {
+      "git_blob_sha1": "e5fa041414c040adb2d9131e2a57256d5cfabef8",
+      "size_bytes": 908959
+    },
+    "modeling_bailing_moe_v3.py": {
+      "git_blob_sha1": "65d6720f84fc21de32ba6d0b39040651a751a961",
+      "size_bytes": 75640
+    },
+    "modeling_bailing_moe_v3_audio.py": {
+      "git_blob_sha1": "33db91cd2cdb3cf902de02069e99b9384a0d55f9",
+      "size_bytes": 14123
+    },
+    "processing_bailing_moe_v3_audio.py": {
+      "git_blob_sha1": "0412194b77b24d53f0edbb98daad9ee6652a3f06",
+      "size_bytes": 4852
+    },
+    "processor_config.json": {
+      "git_blob_sha1": "29fec20aceca11bb7cab4c513a28f605ab97d3fa",
+      "size_bytes": 157
+    },
+    "special_tokens_map.json": {
+      "git_blob_sha1": "637ec10e395d587c9de362c8ba1fe7bb78bf3b76",
+      "size_bytes": 1290
+    },
+    "tokenizer.json": {
+      "sha256": "2207eca933084436c15bb85ee648e28b2957934bc1da9506e10ea6c243bad869",
+      "size_bytes": 12210658
+    },
+    "tokenizer_config.json": {
+      "git_blob_sha1": "1bfbb87f0468e4fdd3e754e8021ecdcd0874d1cc",
+      "size_bytes": 55437
+    }
+  },
+  "repo_id": "inclusionAI/Ming-3.0-audio-tiny",
+  "revision": "3c9578f641b6745abf2d1239dc8419726f37c0e2"
+}
