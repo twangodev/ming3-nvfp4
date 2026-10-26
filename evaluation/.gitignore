@@ -1,1 +1,2 @@
+# Machine-specific checkpoint paths and evaluation configuration.
 *.local.json

@@ -1,37 +1,59 @@
-.venv/
+# Python defaults adapted from:
+# https://github.com/github/gitignore/blob/main/Python.gitignore
+
+# Bytecode and native extensions
 __pycache__/
-*.egg-info/
-.pytest_cache/
-.ruff_cache/
-artifacts/
-data/
-.cache/
-dist/
+*.py[codz]
+*$py.class
+*.so
+
+# Build and package outputs
 build/
-serving/.venv/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+wheels/
+
+# Virtual environments and local configuration
+.venv/
+venv/
+env/
+ENV/
+.env
+.envrc
+.pypirc
+
+# Test reports and tool caches
+.pytest_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.ruff_cache/
+.mypy_cache/
+.cache/
+.ipynb_checkpoints/
+
+# Editor settings
 .idea/
-releases/
-serving/*
-!serving/.python-version
-!serving/README.md
-!serving/LICENSE
-!serving/LICENSE-APACHE-2.0
-!serving/pyproject.toml
-!serving/uv.lock
-!serving/measured-runtime.txt
-!serving/pytest.ini
-!serving/src/
-!serving/tests/
-evals/
-runs/
-outputs/
+
+# Generated project data and release workspaces
+/artifacts/
+/data/
+/releases/
+/evals/
+/runs/
+/outputs/
+
+# Model weights and runtime logs
 *.safetensors
 *.pt
 *.pth
 *.bin
 *.log
 
-# Historical recipes are retained locally; the repository documents the releases.
-recipes/*.toml
-!recipes/tiny.toml
-!recipes/flash.toml
+# Keep uv.lock and .python-version versioned for reproducibility.
