@@ -5,7 +5,7 @@ license = "MIT AND Apache-2.0"
 license-files = ["LICENSE", "LICENSE-APACHE-2.0"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "vllm==0.30.0",
+    "vllm==0.31.0",
     "vllm-omni",
     "torch==2.13.0",
     "torchaudio==2.11.0",
