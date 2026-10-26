@@ -1,0 +1,7 @@
+{
+  "MMAR": ["https://github.com/ddlBoJack/MMAR.git", "3bce090a967db576c8ad433b290a8da582d6d2a0"],
+  "MMAU": ["https://github.com/Sakshi113/MMAU.git", "110127f54c0dfba3faa5ec9feee4a7e4148679c5"],
+  "MMLU-Pro": ["https://github.com/TIGER-AI-Lab/MMLU-Pro.git", "f418b116db00b065c2aea046518d8fcf74d39872"],
+  "MMSU": ["https://github.com/dingdongwang/MMSU.git", "217d1d3f5ad59203ed16f44c0fd913f4f8add2b4"],
+  "whisper": ["https://github.com/openai/whisper.git", "86098128c0b4f24f0e2aa2994de830614b474227"]
+}

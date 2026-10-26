@@ -1,0 +1,65 @@
+name: ming3-nvfp4
+
+x-common: &common
+  init: true
+  user: "${MING_UID:-1000}:${MING_GID:-1000}"
+  working_dir: /opt/ming
+  volumes:
+    - ${MING_MODEL_DIR:-./artifacts/models}:/models:ro
+    - ${MING_WORK_DIR:-./artifacts/docker}:/work
+    - ${MING_HF_HUB_DIR:-./artifacts/huggingface}:/cache/huggingface/hub
+  environment:
+    HF_HOME: /cache/huggingface
+    HF_MODULES_CACHE: /work/.cache/huggingface/modules
+    XDG_CACHE_HOME: /work/.cache
+  stop_grace_period: 90s
+
+x-gpu: &gpu
+  shm_size: 16gb
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            device_ids: ["${MING_GPU:-0}"]
+            capabilities: [gpu]
+
+services:
+  quantize:
+    <<: [*common, *gpu]
+    image: ming3-nvfp4-quantize:local
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: quantize
+    profiles: [tools]
+
+  evaluation:
+    <<: *common
+    image: ming3-nvfp4-evaluation:local
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: evaluation
+    profiles: [tools]
+
+  serve:
+    <<: [*common, *gpu]
+    image: ming3-nvfp4-serving:local
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: serving
+    command: ["${MING_CHECKPOINT:-/models/tiny-nvfp4}", "--omni", "--deploy-config", "${MING_PROFILE:-/opt/ming/evaluation/profiles/tiny.yaml}", "--host", "0.0.0.0", "--port", "8091", "--init-timeout", "1800", "--stage-init-timeout", "1800"]
+    ports: ["127.0.0.1:${MING_PORT:-8091}:8091"]
+
+  suite:
+    <<: [*common, *gpu]
+    image: ming3-nvfp4-serving:local
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: serving
+    entrypoint: ["/opt/ming/evaluation/.venv/bin/python", "evaluation/suite.py"]
+    command: ["--config", "/work/models.json", "--manifest", "/work/data/full.jsonl", "--output", "/work/full-suite"]
+    profiles: [tools]

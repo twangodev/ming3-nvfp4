@@ -35,7 +35,7 @@ and settings are pinned in the recipes.
 
 ## Reproduce
 
-Follow the [reproduction guide](docs/reproduction.md) to prepare calibration data,
+Start with the [Docker setup](docker/README.md), then follow the [reproduction guide](docs/reproduction.md) to prepare calibration data,
 quantize, export, and audit a checkpoint. The [serving setup](serving/README.md)
 and [evaluation guide](evaluation/README.md) cover validation with pinned dependencies
 and upstream benchmarks. Weights, datasets, and run artifacts stay outside Git.

@@ -1,39 +1,36 @@
 # Reproducing quantization
 
-Use Linux, Python 3.12 and an NVIDIA CUDA-capable GPU with enough memory for the
-chosen placement. Historical calibration/export ran on Debian 13.7 with an RTX
-PRO 6000 Blackwell (97,887 MiB, SM120), about 125 GiB RAM and a Threadripper 9960X.
-[Provenance](results/provenance.json) records the host receipt hash. These are
-observed host specifications, not tested minimum requirements. No fresh clean
-GPU reproduction is claimed by this documentation update.
+Use the [Docker setup](../docker/README.md) with NVIDIA GPU access. The three
+images isolate quantization, serving, and CPU evaluation dependencies. Historical
+calibration/export ran on an RTX PRO 6000 Blackwell (97,887 MiB, SM120), about
+125 GiB RAM and a Threadripper 9960X. These are observed specifications, not tested
+minimum requirements. [Provenance](results/provenance.json) records that host.
 
-From a fresh checkout, install the locked quantization/data environment:
+From the repository root, after configuring the persistent Docker mounts:
 
 ```bash
-uv sync --locked --extra data
-uv run --no-sync ming-quant host
+docker compose build quantize
+docker compose run --rm quantize host
 ```
 
-`uv run --no-sync` requires that prior sync; it does not install missing packages.
-For development checks use `uv sync --locked --extra data --group dev`, then
-`uv run --no-sync pytest -q` and `uv run --no-sync ruff check src tests`.
-The lock pins PyTorch 2.8.0 (CUDA 12.8), Transformers 5.14.1, Accelerate 1.10.1,
-and Model Optimizer 0.47.0. Run GPU commands where NVIDIA devices are accessible.
+The image pins Python 3.12.13, CUDA 12.8, PyTorch 2.8.0, Transformers 5.14.1,
+Accelerate 1.10.1, and Model Optimizer 0.47.0. Host Python and CUDA toolkits are
+unnecessary; the NVIDIA driver and container runtime remain host prerequisites.
 
 Obtain complete source snapshots separately at the revisions in the recipes,
-including remote-code and audio resources, then set explicit absolute paths.
+including remote-code and audio resources, then set paths inside the container.
 The commands below never fetch source weights. Tiny and Flash are separate runs;
 do not launch competing calibration jobs on one GPU.
 
 ```bash
-MODEL_SOURCE=/absolute/path/to/source/snapshot
+MODEL_SOURCE=/models/tiny-bf16
 RECIPE=recipes/tiny.toml
-RUN_ROOT=/absolute/path/to/local/tiny-run
+RUN_ROOT=/work/tiny-run
 ```
 
 For Flash use `RECIPE=recipes/flash.toml`, its pinned source, and a distinct run
-root. Create the run root on a filesystem with space for source weights,
-calibration state, offload spill and exported shards. The recipes require a
+root. Place the host directory mounted at `/work` on a filesystem with space for
+source weights, calibration state, offload spill and exported shards. The recipes require a
 100 GiB free-disk floor; this is additional to already occupied files and is
 not a complete storage estimate. Flash source root weights alone are about
 239 GiB. Export requires an empty destination and never overwrites source weights.
@@ -72,11 +69,11 @@ sources. This command downloads calibration sources/assets, verifies recorded
 identities and hashes, and refuses to overwrite an existing output:
 
 ```bash
-uv run --no-sync ming-quant prepare-calibration \
+docker compose run --rm quantize prepare-calibration \
   --output "$RUN_ROOT/calibration.jsonl" --assets "$RUN_ROOT/assets"
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   inspect --output "$RUN_ROOT/inventory.json"
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   coverage --manifest "$RUN_ROOT/calibration.jsonl" \
   --output "$RUN_ROOT/coverage" --layerwise
 ```
@@ -88,19 +85,19 @@ byte hash is not the portability identity. Keep generated metadata and use
 `check-manifests` with your own development/acceptance manifests when adding data:
 
 ```bash
-uv run --no-sync ming-quant check-manifests \
-  "$RUN_ROOT/calibration.jsonl" /absolute/path/to/evaluation.jsonl
+docker compose run --rm quantize check-manifests \
+  "$RUN_ROOT/calibration.jsonl" /work/evaluation.jsonl
 ```
 
 Tiny calibration and export:
 
 ```bash
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   calibrate --manifest "$RUN_ROOT/calibration.jsonl" \
   --coverage-from "$RUN_ROOT/coverage" --output "$RUN_ROOT/calibration" --layerwise
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   export --calibration "$RUN_ROOT/calibration" --output "$RUN_ROOT/checkpoint"
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   audit-export --checkpoint "$RUN_ROOT/checkpoint" --output "$RUN_ROOT/export-audit.json"
 ```
 
@@ -109,11 +106,11 @@ source snapshot, even when the calibration target is Flash. Set the validation
 source to Tiny revision `3c9578f641b6745abf2d1239dc8419726f37c0e2`:
 
 ```bash
-TINY_VALIDATION_SOURCE=/absolute/path/to/pinned/tiny/snapshot
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+TINY_VALIDATION_SOURCE=/models/tiny-bf16
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   validate-flash --manifest "$RUN_ROOT/calibration.jsonl" \
   --validation-source "$TINY_VALIDATION_SOURCE" --output "$RUN_ROOT/validation"
-uv run --no-sync ming-quant --recipe "$RECIPE" --source "$MODEL_SOURCE" \
+docker compose run --rm quantize --recipe "$RECIPE" --source "$MODEL_SOURCE" \
   calibrate --manifest "$RUN_ROOT/calibration.jsonl" \
   --coverage-from "$RUN_ROOT/coverage" --validation "$RUN_ROOT/validation" \
   --output "$RUN_ROOT/calibration" --layerwise
@@ -154,14 +151,14 @@ and audit outputs locally to trace a newly produced checkpoint.
 ## Evaluate an exported checkpoint
 
 Quantization, serving, and benchmark scoring have separate environments. After
-export and the retained-tensor audit, install the [serving runtime](../serving/README.md)
+export and the retained-tensor audit, build the [serving runtime](../serving/README.md)
 and follow the [full-suite evaluation guide](../evaluation/README.md). Set
-`evaluation/models.local.json` to your exported checkpoint paths and the pinned
-original Tiny source. That machine-specific configuration remains outside Git.
+`$MING_WORK_DIR/models.json` to the container paths for your exported checkpoints
+and pinned original Tiny source. Generated checkpoints are under `/work`.
 
-Initialize the benchmark submodules with `git submodule update --init --recursive`.
-The evaluator prepares pinned full dataset splits, runs original Tiny BF16 and
-both NVFP4 checkpoints, and preserves responses for separate scoring. Its data
+The evaluation image includes the pinned benchmark repositories. The evaluator
+prepares pinned full dataset splits, runs original Tiny BF16 and both NVFP4
+checkpoints, and preserves responses for separate scoring. Its data
 preparation downloads are distinct from the training-only calibration selection
 above. Do not use benchmark answers to recalibrate a candidate and then call the
 same benchmark an untouched holdout.
@@ -186,3 +183,10 @@ GPU evidence supports the underlying checks; CPU tests of this extraction do not
 replace a fresh calibration/export run. No full recalibration or benchmark was
 performed while preparing the original quantization commits. The later full
 evaluation ran existing checkpoints; it did not rerun calibration or export.
+
+## Development checks
+
+For local CPU development, install the locked development environment with
+`uv sync --locked --extra data --group dev`, then run `uv run --no-sync pytest -q`
+and `uv run --no-sync ruff check src tests`. This optional development environment
+is separate from the Docker workflow.

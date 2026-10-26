@@ -1,6 +1,6 @@
 # Apply after uv sync --project serving --locked, using uv pip install --no-deps.
-# These are the observed overrides in the completed full-suite environment.
-# They intentionally differ from uv.lock; use --no-sync for subsequent uv runs.
+# Explicitly enforce the versions observed in the completed full-suite environment.
+# The Linux resolution of uv.lock already selects these same versions.
 nvidia-cuda-nvrtc==13.0.88
 nvidia-cuda-runtime==13.0.96
 triton==3.7.1

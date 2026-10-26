@@ -1,6 +1,6 @@
 """Isolated Flash output-budget experiment on capped audio MC and fixed controls."""
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
 import fcntl
 import hashlib
 import json
@@ -12,9 +12,9 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from client import checkpoint_identity, provenance, read_journal, request
+from client import checkpoint_identity, provenance, read_journal, request, request_pool
 from prepare import digest, write_json
-from suite import launch, stop, wait_ready
+from runtime import launch, lock_held, stop, wait_ready
 
 
 def main():
@@ -23,10 +23,8 @@ def main():
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--wait-for-reference", type=Path, required=True)
-    parser.add_argument("--reference-unit", required=True)
+    parser.add_argument("--wait-for-reference", type=Path)
     parser.add_argument("--max-tokens", type=int, default=4096)
-    parser.add_argument("--server-unit", default="ming-parity-flash-budget-server")
     args = parser.parse_args()
     if args.max_tokens < 1:
         parser.error("Token budget must be positive")
@@ -64,20 +62,19 @@ def main():
     if len(saved) == len(selected):
         return
     started = time.monotonic()
-    while True:
+    while args.wait_for_reference:
         state = json.loads((args.wait_for_reference / "progress.json").read_text())
-        active = subprocess.check_output(["systemctl", "--user", "show", args.reference_unit,
-                                          "--property=ActiveState", "--value"], text=True).strip()
-        if state["state"] == "complete" and active not in {"active", "activating"}:
+        active = any(lock_held(args.wait_for_reference / name)
+                     for name in (".lock", ".experiment.lock", ".suite.lock"))
+        if state["state"] == "complete" and not active:
             break
-        if active == "failed" or time.monotonic() - started > 21600:
+        if state["state"] == "failed" or time.monotonic() - started > 21600:
             raise RuntimeError("Reference failed or exceeded six hours")
         write_json(args.output / "progress.json", {"state": "waiting_for_reference", "total": len(selected),
                                                    "reference_completed": state.get("completed", 0)})
         print("Waiting for HF reference", flush=True)
         time.sleep(30)
     root = Path(__file__).resolve().parents[2]
-    unit = args.server_unit
     endpoint = "http://127.0.0.1:8091/v1"
     free = int(subprocess.check_output(["nvidia-smi", "--query-gpu=memory.free",
                                        "--format=csv,noheader,nounits"], text=True).splitlines()[0])
@@ -85,23 +82,21 @@ def main():
         raise RuntimeError(f"GPU occupied: {free} MiB free")
 
     def terminate(signum, frame):
-        subprocess.run(["systemctl", "--user", "stop", "--no-block", unit], check=False)
         raise SystemExit(128 + signum)
 
     signal.signal(signal.SIGTERM, terminate)
     signal.signal(signal.SIGINT, terminate)
-    launched = False
+    process = None
     try:
-        launch(unit, entry, root / "serving", args.output, 8091)
-        launched = True
-        wait_ready(unit, entry["checkpoint"], endpoint)
+        process = launch(entry, root / "serving", args.output, 8091)
+        wait_ready(process, entry["checkpoint"], endpoint)
         remaining = [r for r in selected if r["id"] not in saved]
         for row in remaining:
             if digest(row["audio"]["path"]) != row["audio"]["sha256"]:
                 raise ValueError("Audio checksum mismatch")
         errors = []
         tick = time.monotonic()
-        with journal.open("a") as stream, ThreadPoolExecutor(max_workers=64) as pool:
+        with journal.open("a") as stream, request_pool(64) as pool:
             futures = {pool.submit(request, row, entry["checkpoint"], endpoint): row["id"] for row in remaining}
             for future in as_completed(futures):
                 sample_id = futures[future]
@@ -122,8 +117,7 @@ def main():
         if errors:
             raise RuntimeError(f"{len(errors)} diagnostic requests failed")
     finally:
-        if launched:
-            stop(unit)
+        stop(process)
 
 
 if __name__ == "__main__":

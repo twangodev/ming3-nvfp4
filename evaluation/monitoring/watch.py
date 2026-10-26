@@ -7,8 +7,12 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import time
 import urllib.request
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from runtime import lock_held
 
 
 def read_json(path):
@@ -16,7 +20,10 @@ def read_json(path):
 
 
 def command(argv):
-    result = subprocess.run(argv, capture_output=True, text=True, timeout=10)
+    try:
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return "unavailable"
     return result.stdout.strip() if result.returncode == 0 else "unavailable"
 
 
@@ -48,7 +55,7 @@ class Journal:
         return {name: dict(counts) for name, counts in self.counts.items()}
 
 
-def watch(root, unit, interval, once=False):
+def watch(root, interval, once=False):
     target = root / "monitoring"
     target.mkdir(parents=True, exist_ok=True)
     journals, last_progress = {}, {}
@@ -58,13 +65,13 @@ def watch(root, unit, interval, once=False):
         alerts, models = [], {}
         try:
             suite = read_json(root / "suite-progress.json")
-            service = command(["systemctl", "--user", "show", unit, "--property=ActiveState", "--value"])
+            active = lock_held(root / ".suite.lock")
             if suite.get("state") == "failed":
                 alerts.append(f"Suite failed: {suite.get('error')}")
-            elif suite.get("state") != "complete" and service not in {"active", "activating"}:
-                alerts.append(f"Suite service is {service}")
+            elif suite.get("state") != "complete" and not active:
+                alerts.append("No running suite owns the run lock")
             free_gib = shutil.disk_usage(root).free / 2**30
-            if free_gib < 100:
+            if free_gib < suite.get("min_free_gib", 100):
                 alerts.append(f"Disk below launch floor: {free_gib:.1f} GiB free")
             for path in sorted(root.glob("*/predictions.jsonl")):
                 name = path.parent.name
@@ -98,7 +105,8 @@ def watch(root, unit, interval, once=False):
                         alerts.append(f"{name}/{benchmark}: upstream parser excluded {result['excluded_by_upstream_parser']} answers")
             if suite.get("state") == "running":
                 try:
-                    with urllib.request.urlopen("http://127.0.0.1:8091/v1/models", timeout=5) as response:
+                    endpoint = suite.get("endpoint", "http://127.0.0.1:8091/v1")
+                    with urllib.request.urlopen(endpoint + "/models", timeout=5) as response:
                         served = [item["id"] for item in json.load(response)["data"]]
                     current = root / suite["model"]
                     identity = read_json(current / "run.json") or read_json(current / "smoke/run.json")
@@ -108,7 +116,7 @@ def watch(root, unit, interval, once=False):
                     alerts.append(f"Server health check failed: {error}")
             gpu = command(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"])
             health = {"checked_at": datetime.now(timezone.utc).isoformat(), "interval_seconds": interval,
-                      "suite": suite, "service": service, "gpu_utilization_and_memory_mib": gpu,
+                      "suite": suite, "runner_lock_held": active, "gpu_utilization_and_memory_mib": gpu,
                       "free_disk_gib": round(free_gib, 2), "models": models, "alerts": alerts}
         except Exception as error:
             alerts = [f"Monitor check failed: {error!r}"]
@@ -132,10 +140,9 @@ def watch(root, unit, interval, once=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
-    parser.add_argument("--suite-unit", required=True)
     parser.add_argument("--interval", type=int, default=60)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     if args.interval < 10:
         parser.error("Interval must be at least 10 seconds")
-    watch(args.run_dir.resolve(), args.suite_unit, args.interval, args.once)
+    watch(args.run_dir.resolve(), args.interval, args.once)

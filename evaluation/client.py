@@ -3,6 +3,7 @@ import argparse
 import base64
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 import fcntl
 import json
 import mimetypes
@@ -15,6 +16,17 @@ import requests
 
 from prepare import REGISTRY, digest, write_json
 from upstream import ROOT
+
+
+@contextmanager
+def request_pool(concurrency):
+    pool = ThreadPoolExecutor(max_workers=concurrency)
+    try:
+        yield pool
+    finally:
+        # On interruption, let the caller stop its server before joining any
+        # requests blocked on that server. Normal runs already drain all futures.
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def select_rows(manifest, limit=0):
@@ -151,7 +163,8 @@ def _run(manifest, output, model, endpoint, concurrency, limit):
     if not runtime_path.exists():
         runtime_path = output.parent / "server.json"
     runtime = json.loads(runtime_path.read_text()) if runtime_path.exists() else {}
-    runtime = {key: runtime[key] for key in ("profile_sha256", "serving_lock_sha256", "plugin_files") if key in runtime}
+    runtime = {key: runtime[key] for key in ("profile_sha256", "serving_lock_sha256", "plugin_files",
+                                           "packages", "measured_runtime_sha256", "dockerfile_sha256") if key in runtime}
     identity = {"protocol": "ming-standard-v1", "manifest": str(manifest),
                 "manifest_sha256": digest(manifest), "model": model,
                 "checkpoint": checkpoint_identity(model), "endpoint": endpoint,
@@ -198,7 +211,7 @@ def _run(manifest, output, model, endpoint, concurrency, limit):
         write_json(output / "progress.json", value)
         print(json.dumps(value), flush=True)
 
-    with journal_path.open("a") as journal, ThreadPoolExecutor(max_workers=concurrency) as pool:
+    with journal_path.open("a") as journal, request_pool(concurrency) as pool:
         pending = {}
         exhausted = False
         while pending or not exhausted:

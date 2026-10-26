@@ -32,94 +32,92 @@ partition is removed from these runs.
 
 ## Set up and prepare
 
-From the repository root:
+Follow the [Docker setup](../docker/README.md) first. From the repository root:
 
 ```bash
-git submodule update --init --recursive
-uv sync --project evaluation --locked
-
-uv run --project evaluation --no-sync python evaluation/prepare.py \
-  --output artifacts/evaluation/standard-v1/data --download
+docker compose build evaluation suite
+docker compose run --rm evaluation evaluation/prepare.py \
+  --output /work/data --download
+cp evaluation/models.example.json "$MING_WORK_DIR/models.json"
 ```
 
-`--download` permits missing pinned dataset downloads on a fresh machine. Omit
-it for a cache-only run. If an earlier local audio manifest is available, add
-`--reuse-audio-manifest /absolute/path/to/earlier/full.jsonl` to avoid writing
-duplicate audio. Preparation reads the original pinned HF datasets, not old
-prompts or labels. Use a new output directory for a new preparation.
+Edit the copied model config to use checkpoint paths **inside the container**:
+`/models/...`, `/work/...`, or a complete snapshot under `/cache/huggingface/hub`.
+Use the same Tiny profile and concurrency for BF16 and NVFP4. These profiles
+target the 96 GB SM120 GPU; they are not portable hardware defaults. Flash uses
+a 16,384-token context for MMLU-Pro's 4,000-token answer budget.
 
-Install the separate [serving environment](../serving/README.md) before launching
-GPU evaluations. It contains vLLM 0.30.0, torch 2.13.0, the pinned inclusionAI
-vLLM-Omni fork, and the `ming3_serving` model-mapping/ngram plugin. Its setup also
-records three measured dependency overrides that differ from its lockfile.
-The CPU-only evaluation project does not install that runtime. Lockfile and
-plugin fingerprints are recorded per run. These launch profiles target the
-96 GB SM120 GPU; they are not portable hardware defaults.
+`--download` permits missing pinned dataset downloads. Omit it for a cache-only
+run. `--reuse-audio-manifest /work/earlier/full.jsonl` can reuse audio from a
+previous preparation when its container paths still exist. Preparation reads
+the original pinned datasets, not old prompts or labels. Use a new output
+directory for a new preparation.
 
-Copy [`models.example.json`](models.example.json) to `evaluation/models.local.json`
-and set the three absolute checkpoint paths. `*.local.json` stays outside Git.
-Use the same Tiny profile and concurrency for BF16 and NVFP4. Flash uses its
-native NVFP4 runtime and a 16,384-token context to accommodate the upstream
-MMLU-Pro 4,000-token answer budget.
+The images include self-contained copies of the five pinned upstream evaluator
+repositories. Their revisions match this checkout's submodules and are recorded
+in each run. Host submodule initialization is only needed for local development.
+The [serving image](../serving/README.md) includes the measured runtime pins.
 
 ## Start and monitor
 
-The suite requires Linux user systemd. It starts one owned server at a time,
-checks the served model identity, runs two smoke examples from each benchmark,
-then runs and scores the full split before moving to the next model. It stops
-the owned server on completion or failure. It never stops an unrelated server.
-The suite stops before launching a model if the output filesystem has less than
-100 GiB free.
+The suite starts one inference process group at a time inside its GPU container,
+checks the model identity, scores two smoke examples per benchmark, then runs
+and scores the full split. It terminates its server on completion, interruption,
+or failure. Docker's init process reaps orphan workers. A shared run lock prevents
+concurrent writers. Each model launch requires 100 GiB free on the output filesystem.
 
 ```bash
-mkdir -p artifacts/evaluation/standard-v1
-systemd-run --user --unit=ming-benchmarks-standard-v1-run \
-  --property="WorkingDirectory=$PWD" \
-  --property="StandardOutput=append:$PWD/artifacts/evaluation/standard-v1/suite.log" \
-  --property=StandardError=inherit \
-  "$PWD/evaluation/.venv/bin/python" evaluation/suite.py \
-  --config evaluation/models.local.json \
-  --manifest artifacts/evaluation/standard-v1/data/full.jsonl \
-  --output artifacts/evaluation/standard-v1-run
-
-cat artifacts/evaluation/standard-v1-run/suite-progress.json
-cat artifacts/evaluation/standard-v1-run/tiny-bf16/progress.json
-tail -f artifacts/evaluation/standard-v1/suite.log
+docker compose run -d --name ming-eval suite
+docker logs -f ming-eval
+cat "$MING_WORK_DIR/full-suite/suite-progress.json"
+cat "$MING_WORK_DIR/full-suite/tiny-bf16/progress.json"
 ```
 
-`suite-progress.json` names the current model and owned server unit. Each model's
-`progress.json` reports completed examples, per-benchmark counts, throughput,
-generation caps, and an estimate based on throughput so far. That estimate can
-change substantially when the workload moves from short ASR outputs to long
-MMLU-Pro reasoning.
-
-The optional [health monitor](monitoring/README.md) checks progress, server health,
-resources, and response formatting every minute and keeps a local alert history.
-
-[Parity diagnostics](diagnostics/README.md) compare alternative Chinese text
-normalization, model answer formats, and an independent Hugging Face reference.
-They preserve the original suite scores and prediction journals.
-
-To stop, use `systemctl --user stop ming-benchmarks-standard-v1-run`. Re-run the same
-command to resume (reset a failed unit with `systemctl --user reset-failed
-ming-benchmarks-standard-v1-run` first). Successful predictions are journaled and
-skipped on resume. Changing the manifest, checkpoint identity, client code,
-evaluator revision, serving profile, plugin files, or concurrency requires a
-fresh run directory. The runner refuses concurrent writers and duplicate IDs.
-
-To connect the client to an already running compatible server:
+The detached job survives terminal disconnection. Check its final exit code with
+`docker inspect ming-eval --format '{{.State.ExitCode}}'`; successful completion
+also writes `state: complete` to `suite-progress.json`. Progress includes the
+current model, completed examples, throughput, generation caps, and a changing
+ETA. The optional [monitor](monitoring/README.md) records resource and response alerts.
 
 ```bash
-uv run --project evaluation --no-sync python evaluation/client.py \
-  --manifest artifacts/evaluation/standard-v1/data/full.jsonl \
-  --model /absolute/path/to/checkpoint \
-  --output artifacts/evaluation/manual-run \
+docker stop --time 90 ming-eval
+# Remove the stopped container, retaining the bind-mounted run artifacts.
+docker rm ming-eval
+# Resume with the same image, config, mounts, and output directory.
+docker compose run -d --name ming-eval suite
+```
+
+Successful predictions are journaled and skipped on resume. Changes to the
+manifest, checkpoint identity, client, evaluators, runtime packages, Dockerfile,
+profile, plugins, or concurrency require a fresh output directory. **Use a new
+run directory when migrating a historical run into Docker.** The committed full
+results predate this migration and are preserved; this change does not claim a
+fresh full-suite reproduction. Historical scoring requires its matching source
+revision (the pre-migration checkout is `19f2b90`).
+
+For a bounded check, choose a separate output directory:
+
+```bash
+docker compose run --rm suite --config /work/models.json \
+  --manifest /work/data/full.jsonl --output /work/smoke \
+  --limit-per-benchmark 2
+```
+
+The nonzero limit is recorded as a smoke run. `--min-free-gib` can adjust the
+launch floor for such bounded checks; it does not estimate full-run storage.
+
+To use the standalone client against `docker compose up -d serve`:
+
+```bash
+docker compose run --rm evaluation evaluation/client.py \
+  --endpoint http://serve:8091/v1 --manifest /work/data/full.jsonl \
+  --model /models/tiny-nvfp4 --output /work/manual-smoke \
   --concurrency 64 --limit-per-benchmark 2
 ```
 
-Omit `--limit-per-benchmark` for a full run. A nonzero limit is permanently
-recorded as a smoke run. The standalone client checks model identity but relies
-on the operator to record the external server configuration.
+The client checks model identity; the operator must record the external server's
+configuration. [Parity diagnostics](diagnostics/README.md) retain separate journals
+for normalization, answer formats, and independent Hugging Face comparisons.
 
 ## Protocol details
 
@@ -158,9 +156,8 @@ unparseable answers counted as incorrect. No answer-dependent retries occur.
 ## Score and validate
 
 ```bash
-uv run --project evaluation --no-sync python evaluation/score.py \
-  artifacts/evaluation/standard-v1-run/tiny-bf16
-uv run --project evaluation --no-sync pytest -q -c evaluation/pytest.ini evaluation/tests
+docker compose run --rm evaluation evaluation/score.py /work/full-suite/tiny-bf16
+docker compose run --rm evaluation -m pytest -p no:cacheprovider -q -c evaluation/pytest.ini evaluation/tests
 ```
 
 Scoring requires exactly one successful prediction per selected example. Each
