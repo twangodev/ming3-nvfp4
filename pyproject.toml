@@ -2,6 +2,8 @@
 name = "ming3-nvfp4"
 version = "0.1.0"
 description = "Reproducible NVFP4 quantization and export for Ming 3 audio models"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "accelerate==1.10.1",

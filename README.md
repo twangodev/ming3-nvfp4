@@ -5,6 +5,7 @@
   <p>
     <a href="https://huggingface.co/twangodev/Ming-3.0-audio-tiny-NVFP4"><img src="https://img.shields.io/badge/Tiny-NVFP4-FFD21E?style=flat-square&amp;logo=huggingface" alt="Tiny NVFP4 on Hugging Face"></a>
     <a href="https://huggingface.co/twangodev/Ming-3.0-audio-flash-NVFP4"><img src="https://img.shields.io/badge/Flash-NVFP4-FFD21E?style=flat-square&amp;logo=huggingface" alt="Flash NVFP4 on Hugging Face"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/twangodev/ming3-nvfp4?style=flat-square" alt="License"></a>
   </p>
   <p><a href="docs/reproduction.md">Reproduce</a> · <a href="serving/README.md">Serve</a> · <a href="evaluation/README.md">Evaluate</a> · <a href="docs/results/full-suite-parity.md">Results</a></p>
 </div>
@@ -49,3 +50,6 @@ reproductions of Ming's published evaluation.
 
 Base models by inclusionAI: [Tiny](https://huggingface.co/inclusionAI/Ming-3.0-audio-tiny)
 and [Flash](https://huggingface.co/inclusionAI/Ming-3.0-audio-flash).
+
+Original project code is [MIT licensed](LICENSE). Third-party components retain
+their existing licenses, including the [Apache-2.0 vLLM-Omni adaptation](serving/LICENSE-APACHE-2.0).

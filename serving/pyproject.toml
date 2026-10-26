@@ -1,6 +1,8 @@
 [project]
 name = "ming3-nvfp4-serving"
 version = "0.1.0"
+license = "MIT AND Apache-2.0"
+license-files = ["LICENSE", "LICENSE-APACHE-2.0"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "vllm==0.30.0",

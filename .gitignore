@@ -14,6 +14,7 @@ releases/
 serving/*
 !serving/.python-version
 !serving/README.md
+!serving/LICENSE
 !serving/LICENSE-APACHE-2.0
 !serving/pyproject.toml
 !serving/uv.lock
