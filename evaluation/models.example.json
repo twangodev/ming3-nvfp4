@@ -1,0 +1,5 @@
+[
+  {"name": "tiny-bf16", "checkpoint": "/absolute/path/to/Ming-3.0-audio-tiny", "profile": "profiles/tiny.yaml", "concurrency": 256},
+  {"name": "tiny-nvfp4", "checkpoint": "/absolute/path/to/Ming-3.0-audio-tiny-NVFP4", "profile": "profiles/tiny.yaml", "concurrency": 256},
+  {"name": "flash-nvfp4", "checkpoint": "/absolute/path/to/Ming-3.0-audio-flash-NVFP4", "profile": "profiles/flash.yaml", "concurrency": 64}
+]

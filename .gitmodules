@@ -1,0 +1,15 @@
+[submodule "evaluation/upstream/MMAU"]
+	path = evaluation/upstream/MMAU
+	url = https://github.com/Sakshi113/MMAU.git
+[submodule "evaluation/upstream/MMAR"]
+	path = evaluation/upstream/MMAR
+	url = https://github.com/ddlBoJack/MMAR.git
+[submodule "evaluation/upstream/MMSU"]
+	path = evaluation/upstream/MMSU
+	url = https://github.com/dingdongwang/MMSU.git
+[submodule "evaluation/upstream/MMLU-Pro"]
+	path = evaluation/upstream/MMLU-Pro
+	url = https://github.com/TIGER-AI-Lab/MMLU-Pro.git
+[submodule "evaluation/upstream/whisper"]
+	path = evaluation/upstream/whisper
+	url = https://github.com/openai/whisper.git

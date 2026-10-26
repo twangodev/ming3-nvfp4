@@ -1,0 +1,16 @@
+[project]
+name = "ming3-evaluation"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "huggingface-hub>=1.5,<2",
+  "jiwer==4.0.0",
+  "more-itertools>=10,<11",
+  "pyarrow==26.0.0",
+  "regex>=2024.11.6",
+  "requests==2.34.2",
+  "tqdm>=4.66,<5",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<9", "ruff>=0.14,<0.16"]
